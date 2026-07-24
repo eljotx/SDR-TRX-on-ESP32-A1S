@@ -17,7 +17,7 @@ The Si5351 acts as a local oscillator, clocking the transmitter and receiver mix
 
 ## Tayloe Mixer
 
-![Mixer FST3253](/fst3253jpg)
+![Mixer FST3253](/fst3253.jpg)
 
 The FST3253 is a dual, quadruple, high-speed digital keyer that acts as a keyed mixer for both the transmitter and receiver. During reception, the mixer extracts the I and Q components from the received signal for further digital processing. During transmission, it modulates the RF signal with I and Q components, creating a lower or upper sideband signal.
 
