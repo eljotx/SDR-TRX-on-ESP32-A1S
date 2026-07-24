@@ -27,3 +27,11 @@ The FST3253 is a dual, quadruple, high-speed digital keyer that acts as a keyed 
 
 The core of the system is the ESP32 A1S processor, which is suitable for implementing the project because it contains built-in internal A/D and D/A converters and operates at a speed that allows for sufficiently fast sampling and the use of digital filters of desired complexity. Although the A/D and D/A converters have a resolution of 16 bits, this seems sufficient for a design that doesn't aspire to perfection, but rather addresses basic digital processing issues. Additionally, the processor has two cores, allowing for the separation of tasks that don't require immediate processing from those related to audio streaming. An additional advantage of the processor is the ability to use two I2c channels for communication with peripherals and a channel for communication with the display. All of these features are discussed in more detail in the following descriptions.
 
+# How Receiver works
+
+# How transceiver works
+
+## CW mode
+
+## SSB mode
+
