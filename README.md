@@ -27,11 +27,13 @@ The FST3253 is a dual, quadruple, high-speed digital keyer that acts as a keyed 
 
 The core of the system is the ESP32 A1S processor, which is suitable for implementing the project because it contains built-in internal A/D and D/A converters and operates at a speed that allows for sufficiently fast sampling and the use of digital filters of desired complexity. Although the A/D and D/A converters have a resolution of 16 bits, this seems sufficient for a design that doesn't aspire to perfection, but rather addresses basic digital processing issues. Additionally, the processor has two cores, allowing for the separation of tasks that don't require immediate processing from those related to audio streaming. An additional advantage of the processor is the ability to use two I2c channels for communication with peripherals and a channel for communication with the display. All of these features are discussed in more detail in the following descriptions.
 
-# How Receiver works
+# How receiver works
+The antenna signal reaches a Tayloe mixer, where I and Q signals are generated. Both signals contain sideband information, which is used for digital data processing. To achieve this, the analog I and Q signals are digitized using 16-bit A/D converters. A Hilbert transform is then applied to one of the channels (shifting the signal's phase by 90 degrees). The signals are then digitally filtered using a BiQuad digital filter. Three filters are available: two low-pass filters at 3.6 kHz and 2.4 kHz, and a bandpass filter at 800 Hz for CW reception. Finally, the I and Q signals are converted back to analog using 16-bit D/A converters and summed, reducing the sideband of the received signal. The received sideband is selected in the Tayloe mixer by changing the phase of the heterodyne signals, reducing the load on the digital software.
 
 # How transceiver works
 
-## CW mode
-
 ## SSB mode
+In SSB mode, the transmitter initially digitizes the microphone signal using A/D converters. Subsequently, a Hilbert transform is performed on one of the signals, followed by a common LPF digital filtering with a 2.4 kHz bandwidth. This creates two digital I and Q signals, which are then converted to analog using D/A converters. The SSB signal is formed in a Tayloe mixer using two heterodyne signals that are 90 degrees out of phase. Similar to receiving, the sideband is selected by determining which heterodyne signal has a +90 degree offset relative to the other. This signal is then amplified and fed to the antenna. 
 
+## CW mode
+In CW mode, the Tayloe mixer is disabled (heterodyne stop), and an additional keyed heterodyne is activated at the device's operating frequency, with a sideband offset of approximately +800 Hz, depending on the sideband used.
