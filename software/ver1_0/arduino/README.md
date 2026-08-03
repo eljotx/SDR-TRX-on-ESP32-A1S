@@ -1,1 +1,1 @@
-
+The structure of the program directory and the `graph` subdirectory (including their contents) should match that of this repository, unless the location definitions (`#include` directives) are changed.
