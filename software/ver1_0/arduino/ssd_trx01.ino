@@ -40,7 +40,7 @@ void (*resetFunc)(void) = 0;
 #include <Arduino.h>
 #include <RotaryEncoder.h>
 #include <EEPROM.h>
-#include "AudioTools/AudioLibs/AudioRealFFT.h"
+//#include "AudioTools/AudioLibs/AudioRealFFT.h"
 //-----------------------------loading required graphic elements in graph directory-------------------------------
 #include ".//graph//g_b.h"
 #include ".//graph//g00f.h"
@@ -728,9 +728,9 @@ void fftGraph(int strenght){ //under development
 }
 
 
-void fftResult(AudioFFTBase &fft) {  //under development
-  AudioFFTResult weights[64];
-  fft.resultArray(weights);
+//void fftResult(AudioFFTBase &fft) {  //under development
+  //AudioFFTResult weights[64];
+  //fft.resultArray(weights);
     //auto result = fft.result(); // Gets the dominant frequency peak    
     // To extract all individual frequency bins in array:
     //float* weights = fft.resultArray();
@@ -746,7 +746,7 @@ void fftResult(AudioFFTBase &fft) {  //under development
     //Serial.print(result.frequency);
     //Serial.print(" Hz | Magnitude: ");
     //Serial.println(result.magnitude);
-}  
+//}  
 
 
 //core 0 definition
@@ -780,14 +780,14 @@ void Task0code(void * pvParameters) {
 //Walet on the start screen
 void intro(){
 tft.fillScreen(TFT_BLUE);
-delay(100);
+//delay(100);
 tft.pushImage(89,5,142,200,walet0);
-delay(500);
+delay(200);
 tft.setTextDatum(ML_DATUM);  // Use middle left corner as text coord datum
 tft.setFreeFont(BigFont);
 tft.setTextColor(TFT_YELLOW);  // Set the font colour
 tft.drawString(version, 89, 220);
-delay(3000);
+delay(2000);
 }
 
 //Setup definitions: call sign, Si5351 correction, cw delay etc.
@@ -796,7 +796,7 @@ void Settings() {
   si5351->output_enable(SI5351_CLK0, 0);
   si5351->output_enable(SI5351_CLK1, 0);
   si5351->output_enable(SI5351_CLK2, 1);
-  F1 = 1000000000ULL;
+  F1 = 500000000ULL;
   set_Freq(0);
   si5351->set_freq_manual(2 * F1, pll_tmp, SI5351_CLK2);
   tft.fillScreen(TFT_BLACK);
@@ -804,7 +804,7 @@ void Settings() {
   tft.setTextDatum(C_BASELINE);
   tft.setFreeFont(SmallFont);
   bool saved = false;
-
+  digitalWrite(RxTx_port, HIGH); //output reference signal to RF port
   Save.initButton(&tft, 275, 220, 85, 30, TFT_WHITE, But_color, But_text, "SAVE", 1);  //&tft, x, y, w, h, outline, fill, text
   Save.drawButton();
 
@@ -845,7 +845,7 @@ void Settings() {
   Cwdelay.drawButton();
   tft.fillRoundRect(95, 85, 100, 37, 5, TFT_DARKGREY);
   tft.drawString(String(TxRx_delay), 143, 110);
-
+  delay(500); //delay to avoid save after run setup
   int count_step = 1;
   int count_tens = 0;
   uint16_t t_x = 0, t_y = 0;
