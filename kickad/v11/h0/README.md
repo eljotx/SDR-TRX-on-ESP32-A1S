@@ -5,4 +5,4 @@ The LM386 amplifier may sometimes oscillate at frequencies ranging from several 
 
 The system can be operated in a basic configuration without the AGC system and redundant components. The drawing shows which components do not need to be installed in such a case.
 
-![divider](h0_m.jpg)
+![reduction](h0_m.jpg)
