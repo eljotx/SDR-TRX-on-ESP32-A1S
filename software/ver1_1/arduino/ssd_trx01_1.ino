@@ -42,6 +42,11 @@ void (*resetFunc)(void) = 0;
 #include <Arduino.h>
 #include <RotaryEncoder.h>
 #include <EEPROM.h>
+//#include "AudioTools/AudioLibs/I2SCodecStream.h"
+//#include "AudioTools/AudioLibs/AudioBoardStream.h"
+//#include "AudioTools/AudioLibs/AudioKit.h"
+//#include "AudioBoard.h"
+//#include "AudioTools/CoreAudio/AudioStreams.h"
 //#include <WiFi.h>
 //#include "AudioTools/AudioLibs/AudioRealFFT.h"
 //-----------------------------loading required graphic elements in graph directory-------------------------------
@@ -109,13 +114,29 @@ const float a_bpf24_8_6[] = { 1.0, -1.92297774, 0.96593821 };
 uint16_t sample_rate = 24000;
 uint16_t channels = 2;
 uint16_t bits_per_sample = 16;  // or try with 24 or 32
+AudioInfo info(sample_rate, channels, bits_per_sample); 
 //MultiOutput out;
 //AudioRealFFT fft; //or AudioKissFFT
+//I2SCodecStream i2s_codec(AudioKitEs8388V2); 
 I2SStream i2s;
+//I2SCodecStream i2s(AudioKitEs8388V2); 
+
+//VolumeMeter: Observes the signal right before passing it to I2S
+///VolumeMeter volumeMeter(i2s); 
+//StreamCopy copier(i2s, inFiltered);                        // copies filtered audio to output
+//StreamCopy copier(volumeMeter, inFiltered);   
+
 //StreamCopy copier(i2s, i2s); // copies sound into i2s
-FilteredStream<int16_t, float> inFiltered(i2s, channels);  // Defiles the filter as BaseConverter
-StreamCopy copier(i2s, inFiltered);                        // copies filtered audio to output
+//FilteredStream<int16_t, float> inFiltered(volumeMeter,channels);  // Defines the filter as BaseConverter
+FilteredStream<int16_t, float> inFiltered(i2s, channels);  // Defines the filter as BaseConverter
+//VolumeMeter volumeMeter(inFiltered); 
+//StreamCopy.copier(inFiltered,volumeMeter);
+VolumeMeter volumeMeter(inFiltered);
+//StreamCopy copier(i2s, inFiltered);   
+StreamCopy copier(i2s, volumeMeter);                        // copies filtered audio to output
+//StreamCopy copier(volumeMeter, i2s);  
 //StreamCopy copier(out, inFiltered);
+//StreamCopy copier(i2s,i2s); 
 
 
 //-----------------------------Basic TFT and touch screen action-------------------------------
@@ -275,7 +296,7 @@ byte Arw_table[52];  //initial arw levels with zero
 byte Arw_index = 52;
 byte data_s;
 byte rot_enc = 0;  //encoder rotation 0-> right, 1-> left
-#define Arw_color00 0x7BEF
+#define Arw_color00 0x7BEF //audio level colors
 #define Arw_color01 0x6CEB
 #define Arw_color02 0x3EE7
 #define Arw_color03 0x07E0
@@ -369,11 +390,11 @@ void setup(void) {
 
   //define filters chain
   //inFiltered.setFilter(0, new FIR<float>(hilbert_24_81));
-  inFiltered.setFilter(0, new FilterChain<float, 2>({ new BiQuadDF2<float>(b_lpf24_36, a_lpf24_36), new FIR<float>(hilbert_24_81) }));
+    inFiltered.setFilter(0, new FilterChain<float, 2>({ new BiQuadDF2<float>(b_lpf24_36, a_lpf24_36), new FIR<float>(hilbert_24_81) }));
   //inFiltered.setFilter(0, new FilterChain<float, 2>({new BiQuadDF2<float>(b_bpf24_8_6,a_bpf24_8_6), new FIR<float>(hilbert_24_81)}));
 
   //inFiltered.setFilter(1, new FIR<float>(hilbert_24_81));
-  inFiltered.setFilter(1, new FilterChain<float, 2>({ new BiQuadDF2<float>(b_lpf24_36, a_lpf24_36), new FIR<float>(coeffs_delay_81) }));
+    inFiltered.setFilter(1, new FilterChain<float, 2>({ new BiQuadDF2<float>(b_lpf24_36, a_lpf24_36), new FIR<float>(coeffs_delay_81) }));
   //inFiltered.setFilter(1, new FilterChain<float, 2>({new BiQuadDF2<float>(b_lpf24_24,a_lpf24_20), new FIR<float>(coeffs_delay_81)}));
   //inFiltered.setFilter(1, new FilterChain<float, 2>({new BiQuadDF2<float>(b_bpf24_8_6,a_bpf24_8_6), new FIR<float>(coeffs_delay_81)}));
 
@@ -389,6 +410,7 @@ void setup(void) {
   // start I2S in
   //Serial.println("starting I2S...");
   auto config = i2s.defaultConfig(RXTX_MODE);
+  //auto config = i2s.defaultConfig(RXTX_MODE);
   config.sample_rate = sample_rate;
   config.bits_per_sample = bits_per_sample;
   config.channels = 2;
@@ -399,6 +421,14 @@ void setup(void) {
   config.pin_data_rx = 35;
   config.pin_mck = 0;
   i2s.begin(config);
+
+
+  //Initialize the VolumeMeter wrapper
+  //auto cfg_meter = volumeMeter.defaultConfig();
+  //auto cfg_meter = volumeMeter.cfg_meter();
+  //cfg_meter.copyFrom(info);
+  volumeMeter.begin(info);
+  //comment
 
   //out.add(i2s);
   //out.add(fft);
@@ -502,6 +532,7 @@ void setup(void) {
   if ((buttonPressed() < 7)) {  //checking if setup invoked
     Settings();
   }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -524,38 +555,28 @@ void loop(void) {
     curMs1 = millis();
     curMs2 = curMs1;
     if ((curMs1 - oldMs1) > delay1) {
-      int Arw_read = (2 * analogRead(Arw) + Arw_read_old) / 3;  //counting arw level as 2/3 current and 1/3 past sum
+  //    int amplitude = volumeMeter.volume(); 
+  //    Serial.print("Volume_level = ");
+  //    Serial.println(amplitude);
+      //int Arw_read = (2 * analogRead(Arw) + Arw_read_old) / 3;  //counting arw level as 2/3 current and 1/3 past sum
+      int Arw_read = (2 * volumeMeter.volume() + Arw_read_old) / 3;
       Arw_read_old = Arw_read;
-      if (Arw_read < 20) { Arw_level = 1; }  //20
-      else if (Arw_read >= 20 and Arw_read < 30) {
-        Arw_level = 2;
-      }                                                              //30
-      else if (Arw_read >= 30 and Arw_read < 40) { Arw_level = 3; }  //40
-      else if (Arw_read >= 40 and Arw_read < 50) {
-        Arw_level = 4;
-      }                                                              //50
-      else if (Arw_read >= 50 and Arw_read < 90) { Arw_level = 5; }  //90
-      else if (Arw_read >= 90 and Arw_read < 140) {
-        Arw_level = 6;
-      }                                                                 //140
-      else if (Arw_read >= 140 and Arw_read < 1120) { Arw_level = 7; }  //1120
-      else if (Arw_read >= 1120 and Arw_read < 1250) {
-        Arw_level = 8;
-      }                                                                  //1250
-      else if (Arw_read >= 1250 and Arw_read < 1300) { Arw_level = 9; }  //1300
-      else if (Arw_read >= 1300 and Arw_read < 2600) {
-        Arw_level = 10;
-      }                                                                   //2600
-      else if (Arw_read >= 2600 and Arw_read < 2700) { Arw_level = 11; }  //2800
-      else if (Arw_read >= 2700 and Arw_read < 2800) {
-        Arw_level = 12;
-      } else if (Arw_read >= 2800 and Arw_read < 2880) {
-        Arw_level = 13;
-      } else if (Arw_read >= 2880 and Arw_read < 3000) {
-        Arw_level = 14;
-      } else if (Arw_read >= 3000) {
-        Arw_level = 15;
-      }
+      //Serial.println(Arw_read);
+      if (Arw_read < 30) { Arw_level = 0; }  //20
+      else if (Arw_read >= 30 and Arw_read < 65) {Arw_level = 1; }                                                              //30
+      else if (Arw_read >= 65 and Arw_read < 80) {Arw_level = 2; } 
+      else if (Arw_read >= 80 and Arw_read < 95) {Arw_level = 3; }                                                              //50
+      else if (Arw_read >= 95 and Arw_read < 150) {Arw_level = 4; } 
+      else if (Arw_read >= 150 and Arw_read < 260) {Arw_level = 5; }                                                                 //140
+      else if (Arw_read >= 260 and Arw_read < 420) {Arw_level = 6; } 
+      else if (Arw_read >= 420 and Arw_read < 610) {Arw_level = 7; }                                                                  //1250
+      else if (Arw_read >= 610 and Arw_read < 1800) {Arw_level = 8; }  
+      else if (Arw_read >= 1800 and Arw_read < 4500) {Arw_level = 9; }                                                                   //2600
+      else if (Arw_read >= 4500 and Arw_read < 14000) {Arw_level = 10; } 
+      else if (Arw_read >= 14000 and Arw_read < 30000) {Arw_level = 11; } 
+      //else if (Arw_read >= 30000 and Arw_read < 2880) {Arw_level = 13; }
+      //else if (Arw_read >= 2880 and Arw_read < 3000) { Arw_level = 14; } 
+      else if (Arw_read >= 30000) {Arw_level = 15; }
       Meter(Arw_level_old, Arw_level);
       Arw_level_old = Arw_level;
       fftGraph();
@@ -1027,6 +1048,7 @@ void fftGraph() {  //under development
 void Task0code(void *pvParameters) {
   for (;;) {
     copier.copy();
+    
     if (isFilterChanged == true) {
       if (Filter_index == 0) {
         inFiltered.setFilter(0, new FilterChain<float, 2>({ new BiQuadDF2<float>(b_lpf24_36, a_lpf24_36), new FIR<float>(hilbert_24_81) }));
@@ -1040,6 +1062,9 @@ void Task0code(void *pvParameters) {
       }
       isFilterChanged = false;
     }
+    
+    //static int count = 0;
+    //if (count++ % 25 == 0) Serial.println(volumeMeter.volume());
     delayMicroseconds(1);
     //delay(1);
   }
