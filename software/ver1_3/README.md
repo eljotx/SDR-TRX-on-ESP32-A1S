@@ -1,1 +1,1 @@
-
+This software version is compatible with hardware revision 1_2 and includes frequency-domain analysis of the input signal (complex FFT), with visualization provided via a bar graph or a waterfall display.
