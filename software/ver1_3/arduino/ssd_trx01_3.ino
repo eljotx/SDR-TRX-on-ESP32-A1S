@@ -600,9 +600,19 @@ void loop(void) {
         int idx1;
         for (int idx = 1; idx < 217; idx = idx + 1) {
           if (idx < 108) {
-            idx1 = idx;
+            if (UpDn_state == false){
+              idx1 = idx;
+            }
+            else {
+              idx1 = 256 - idx;
+            }
           } else if (idx > 108) {
-            idx1 = 364 - idx;
+            if (UpDn_state == false){
+              idx1 = 364 - idx;
+            }
+            else{
+              idx1 = idx - 108;
+            }
           }
           if (globalFullAmplitudes[idx1] < 2900) {
             bar = 1;
@@ -647,13 +657,15 @@ void loop(void) {
           if (idx < 108) {
             if (wf_bar == false) {
               tft.drawFastVLine(idx + 125, 227 - bar, bar, color);
-            } else {
-              img.drawPixel(idx + 107, 0, color);
+            }
+            else {
+              img.drawPixel(idx + 107, 0, color);          
             }
           } else if (idx > 108) {
-            if (wf_bar == false) {
+            if (wf_bar == false) { 
               tft.drawFastVLine(233 - idx, 227 - bar, bar, color);
-            } else {
+            } 
+            else { 
               img.drawPixel(215 - idx, 0, color);
             }
           }
